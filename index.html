@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego: Aprende Polimorfismo con Bloques</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=Fira+Code:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0fdf4; /* Fondo verde muy clarito y amigable */
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: #334155;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+        @media (min-width: 1024px) {
+            .game-container { flex-direction: row; }
+        }
+
+        /* Panel de Bloques (Izquierda/Arriba) */
+        .blocks-panel {
+            background-color: #ffffff;
+            border-right: 4px solid #e2e8f0;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+            flex: 1;
+            box-shadow: inset -10px 0 15px -10px rgba(0,0,0,0.05);
+        }
+        @media (min-width: 1024px) {
+            .blocks-panel { max-width: 350px; }
+        }
+
+        /* Estilo de los bloques tipo Blockly */
+        .blockly-block {
+            font-family: 'Fira Code', monospace;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            cursor: grab;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            transition: transform 0.1s, box-shadow 0.1s, filter 0.2s;
+            user-select: none;
+            position: relative;
+            font-size: 0.95rem;
+            display: inline-block;
+            border-left: 8px solid rgba(255,255,255,0.3);
+        }
+        .blockly-block:active {
+            cursor: grabbing;
+            transform: translateY(4px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.2);
+        }
+        
+        /* Efecto de selección para táctil */
+        .blockly-block.selected {
+            filter: brightness(1.2);
+            outline: 4px solid #fbbf24;
+            outline-offset: 2px;
+            transform: scale(1.05);
+            box-shadow: 0 8px 15px rgba(251, 191, 36, 0.4);
+            z-index: 10;
+        }
+
+        /* Panel de Código (Derecha/Abajo) */
+        .code-panel {
+            flex: 2;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .code-skeleton {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 800px;
+            font-family: 'Fira Code', monospace;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: #1e293b;
+            border: 2px solid #e2e8f0;
+        }
+
+        /* Palabras clave de Python en el esqueleto */
+        .kw { color: #db2777; font-weight: 600; } /* def, class */
+        .str { color: #16a34a; } /* strings */
+        .comment { color: #94a3b8; font-style: italic; font-family: 'Nunito', sans-serif;}
+
+        /* Zonas de soltar (Slots) */
+        .drop-zone {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f1f5f9;
+            border: 3px dashed #cbd5e1;
+            border-radius: 8px;
+            min-width: 160px;
+            height: 38px;
+            margin: 0 6px;
+            color: #94a3b8;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            vertical-align: middle;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        /* Indicadores visuales durante el juego */
+        .drop-zone.highlight {
+            background-color: #fef08a;
+            border-color: #eab308;
+            color: #ca8a04;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.3);
+            transform: scale(1.02);
+        }
+
+        .drop-zone.correct {
+            background-color: #22c55e !important;
+            border: 3px solid #16a34a !important;
+            color: white !important;
+            font-family: 'Fira Code', monospace;
+            font-weight: 500;
+            font-size: 0.95rem;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: default;
+        }
+
+        .drop-zone.error {
+            animation: shakeRed 0.5s ease-in-out;
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #dc2626;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes shakeRed {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .indent-1 { margin-left: 2rem; }
+        .indent-2 { margin-left: 4rem; }
+        .line { display: flex; align-items: center; min-height: 40px; }
+
+        /* Barra de progreso */
+        .progress-container {
+            background: #e2e8f0;
+            border-radius: 999px;
+            height: 12px;
+            width: 200px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 50;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 3rem;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 400px;
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Encabezado con Progreso -->
+    <header class="header">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">🐍 Poli<span class="text-blue-500">Bloques</span></h1>
+            <p class="text-sm text-slate-500 font-semibold mt-1">Aprende Polimorfismo Jugando</p>
+        </div>
+        <div class="text-right">
+            <div class="font-bold text-slate-700" id="progress-text">0 / 7 Bloques</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="game-container">
+        
+        <!-- Panel de Bloques Draggables -->
+        <div class="blocks-panel">
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-2">
+                <p class="text-sm text-blue-800 font-semibold">
+                    💡 <strong class="text-blue-900">¿Cómo jugar?</strong><br>
+                    Arrastra los bloques de colores hacia los huecos punteados en el código. Si estás en móvil, <strong>toca un bloque</strong> y luego <strong>toca el hueco</strong> donde crees que va.
+                </p>
+            </div>
+            
+            <div id="blocks-container" class="flex flex-col gap-3">
+                <!-- Los bloques se generarán dinámicamente aquí -->
+            </div>
+        </div>
+
+        <!-- Panel del Código (Esqueleto) -->
+        <div class="code-panel">
+            <div class="code-skeleton">
+                
+                <div class="comment mb-2"># --- PARTE 1: Polimorfismo por Duck Typing ---</div>
+                
+                <div class="line"><span class="kw">class</span> Triangulo:</div>
+                <!-- SLOT 1 -->
+                <div class="line indent-1">
+                    <div class="drop-zone" id="slot1" data-accept="b1">Soltar aquí</div>
+                </div>
+                <div class="line indent-2">print(<span class="str">"Tengo 3 lados"</span>)</div>
+                <div class="line"><br></div>
+
+                <div class="line"><span class="kw">class</span> Cuadrado:</div>
+                <div class="line indent-1"><span class="kw">def</span> lados(self):</div>
+                <div class="line indent-2">print(<span class="str">"Tengo 4 lados"</span>)</div>
+                <div class="line"><br></div>
+
+                <div class="line"><span class="kw">def</span> imprimir_lados(figura):</div>
+                <!-- SLOT 2 -->
+                <div class="line indent-1">
+                    <div class="drop-zone" id="slot2" data-accept="b2">Soltar aquí</div>
+                </div>
+                <div class="line"><br></div>
+
+                <!-- SLOT 3 -->
+                <div class="line">mi_figura = <div class="drop-zone" id="slot3" data-accept="b3">Soltar aquí</div></div>
+                <div class="line">imprimir_lados(mi_figura)</div>
+                <div class="line"><br></div>
+
+                <div class="comment mb-2 mt-4"># --- PARTE 2: Polimorfismo por Herencia ---</div>
+                
+                <div class="line"><span class="kw">class</span> Animal:</div>
+                <div class="line indent-1"><span class="kw">def</span> hablar(self):</div>
+                <div class="line indent-2"><span class="kw">pass</span></div>
+                <div class="line"><br></div>
+
+                <!-- SLOT 4 -->
+                <div class="line">
+                    <div class="drop-zone" id="slot4" data-accept="b4">Soltar aquí</div>
+                </div>
+                <div class="line indent-1"><span class="kw">def</span> hablar(self):</div>
+                <div class="line indent-2">print(<span class="str">"Cuac"</span>)</div>
+                <div class="line"><br></div>
+
+                <div class="line"><span class="kw">class</span> Perro(Animal):</div>
+                <!-- SLOT 5 -->
+                <div class="line indent-1">
+                    <div class="drop-zone" id="slot5" data-accept="b5">Soltar aquí</div>
+                </div>
+                <div class="line indent-2">print(<span class="str">"Guaf"</span>)</div>
+                <div class="line"><br></div>
+
+                <div class="line"><span class="kw">class</span> Gato(Animal):</div>
+                <div class="line indent-1"><span class="kw">def</span> hablar(self):</div>
+                <!-- SLOT 6 -->
+                <div class="line indent-2">
+                    <div class="drop-zone" id="slot6" data-accept="b6">Soltar aquí</div>
+                </div>
+                <div class="line"><br></div>
+
+                <div class="line">animales = [Pato(), Perro(), Gato()]</div>
+                <div class="line"><span class="kw">for</span> animal <span class="kw">in</span> animales:</div>
+                <!-- SLOT 7 -->
+                <div class="line indent-1">
+                    <div class="drop-zone" id="slot7" data-accept="b7">Soltar aquí</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Victoria -->
+    <div class="modal-overlay" id="success-modal">
+        <div class="modal-content">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 class="text-3xl font-extrabold text-slate-800 mb-2">¡Excelente Trabajo!</h2>
+            <p class="text-slate-600 mb-6 font-semibold">Has estructurado correctamente los dos tipos de polimorfismo en Python.</p>
+            <button onclick="location.reload()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl transition transform hover:scale-105 shadow-lg">
+                Jugar de Nuevo
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Datos de los 7 bloques correctos requeridos
+        const blocksData = [
+            { id: "b1", text: "def lados(self):", color: "bg-blue-500" }, // Slot 1: Triangulo
+            { id: "b2", text: "figura.lados()", color: "bg-purple-500" }, // Slot 2: imprimir_lados
+            { id: "b3", text: "Triangulo()", color: "bg-pink-500" }, // Slot 3: instanciación
+            { id: "b4", text: "class Pato(Animal):", color: "bg-orange-500" }, // Slot 4: Pato hereda
+            { id: "b5", text: "def hablar(self):", color: "bg-teal-500" }, // Slot 5: Perro método
+            { id: "b6", text: 'print("Miau")', color: "bg-rose-500" }, // Slot 6: Gato acción
+            { id: "b7", text: "animal.hablar()", color: "bg-indigo-500" } // Slot 7: for loop
+        ];
+
+        let score = 0;
+        const totalScore = 7;
+        let selectedBlock = null; // Para control táctil/clics
+
+        // Inicialización
+        function initGame() {
+            const container = document.getElementById('blocks-container');
+            
+            // Mezclar bloques para que no estén en orden
+            const shuffledBlocks = [...blocksData].sort(() => Math.random() - 0.5);
+
+            shuffledBlocks.forEach(data => {
+                const block = document.createElement('div');
+                block.className = `blockly-block ${data.color}`;
+                block.draggable = true;
+                block.id = data.id;
+                block.textContent = data.text;
+                block.dataset.text = data.text; // Guardar texto limpio
+                
+                // Eventos Mouse Drag & Drop
+                block.addEventListener('dragstart', handleDragStart);
+                block.addEventListener('dragend', handleDragEnd);
+
+                // Eventos Touch / Click
+                block.addEventListener('click', handleBlockClick);
+
+                container.appendChild(block);
+            });
+
+            // Configurar Zonas de Soltar
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.addEventListener('dragover', handleDragOver);
+                zone.addEventListener('dragleave', handleDragLeave);
+                zone.addEventListener('drop', handleDrop);
+                zone.addEventListener('click', handleZoneClick);
+            });
+        }
+
+        /* --- LÓGICA ARRASTRAR Y SOLTAR (MOUSE) --- */
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.id);
+            setTimeout(() => e.target.style.opacity = '0.4', 0);
+            clearSelection(); // Limpiar si había algo seleccionado por toque
+        }
+
+        function handleDragEnd(e) {
+            e.target.style.opacity = '1';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); // Permitir soltar
+            if (!this.classList.contains('correct')) {
+                this.classList.add('highlight');
+            }
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('highlight');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('highlight');
+            
+            const blockId = e.dataTransfer.getData('text/plain');
+            const block = document.getElementById(blockId);
+            
+            if(!block) return;
+            evaluatePlacement(block, this);
+        }
+
+        /* --- LÓGICA TOCAR Y COLOCAR (TÁCTIL / CLIC) --- */
+        function handleBlockClick(e) {
+            clearSelection();
+            selectedBlock = this;
+            this.classList.add('selected');
+            
+            // Resaltar visualmente a dónde se puede soltar
+            document.querySelectorAll('.drop-zone:not(.correct)').forEach(z => {
+                z.classList.add('highlight');
+                z.style.borderStyle = 'solid'; // Hacer el borde más notorio
+            });
+        }
+
+        function handleZoneClick(e) {
+            if (!selectedBlock) return;
+            if (this.classList.contains('correct')) return; // Ya resuelto
+
+            evaluatePlacement(selectedBlock, this);
+            clearSelection();
+        }
+
+        function clearSelection() {
+            if (selectedBlock) {
+                selectedBlock.classList.remove('selected');
+                selectedBlock = null;
+            }
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                z.classList.remove('highlight');
+                z.style.borderStyle = 'dashed'; // Restaurar estilo
+            });
+        }
+
+        /* --- EVALUACIÓN Y FEEDBACK VISUAL --- */
+        function evaluatePlacement(block, zone) {
+            const expectedBlockId = zone.dataset.accept;
+
+            if (block.id === expectedBlockId) {
+                // CORRECTO
+                zone.textContent = block.dataset.text;
+                zone.className = `drop-zone correct ${block.classList[1]}`; // Hereda el color del bloque
+                
+                // Eliminar el bloque del panel original
+                block.remove();
+
+                // Actualizar progreso
+                score++;
+                updateProgress();
+
+                // Quitar eventos a la zona para que no sea interactiva
+                zone.style.pointerEvents = 'none';
+
+                checkWin();
+            } else {
+                // INCORRECTO
+                zone.classList.add('error');
+                zone.textContent = "¡Ups! Incorrecto";
+                
+                // Retirar la clase de error después de la animación para que se pueda volver a intentar
+                setTimeout(() => {
+                    zone.classList.remove('error');
+                    zone.textContent = "Soltar aquí";
+                }, 800);
+            }
+        }
+
+        function updateProgress() {
+            document.getElementById('progress-text').textContent = `${score} / ${totalScore} Bloques`;
+            const percentage = (score / totalScore) * 100;
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+        }
+
+        function checkWin() {
+            if (score === totalScore) {
+                setTimeout(() => {
+                    document.getElementById('success-modal').style.display = 'flex';
+                }, 800);
+            }
+        }
+
+        // Arrancar el juego al cargar
+        window.onload = initGame;
+    </script>
+</body>
+</html>
