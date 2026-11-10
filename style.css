@@ -1,0 +1,183 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    /* Fondo punteado como en la referencia */
+    background-color: #f8fbfa;
+    background-image: radial-gradient(#d1d5db 2px, transparent 2px);
+    background-size: 30px 30px;
+    color: #333;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* --- Panel Izquierdo: 70% --- */
+.work-area {
+    width: 70%;
+    padding: 2rem 4rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+.header h2 {
+    color: #1f2937;
+    font-size: 1.5rem;
+}
+
+.score {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4b5563;
+}
+
+.question-container h3 {
+    font-size: 1.6rem;
+    color: #111827;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+/* --- Tarjeta de Código (Estilo de la imagen) --- */
+.code-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.4rem; /* Letra más grande y legible */
+    line-height: 2;
+    color: #1f2937;
+    border: 1px solid #f3f4f6;
+}
+
+/* Colores de sintaxis personalizados */
+.kw { color: #e91e63; font-weight: bold; } /* class, def (Rosa/Rojo) */
+.str { color: #4caf50; } /* "Strings" (Verde) */
+.cmt { color: #9ca3af; font-style: italic; } /* Comentarios (Gris) */
+
+.hidden {
+    display: none !important;
+}
+
+/* --- Zonas de Drag & Drop integradas en el código --- */
+.drop-zone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 180px;
+    height: 45px;
+    background-color: #f1f5f9;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    margin: 0 10px;
+    vertical-align: middle;
+    transition: background-color 0.2s;
+}
+
+.drop-zone.drag-over {
+    background-color: #e2e8f0;
+    border-color: #94a3b8;
+}
+
+/* --- Panel Derecho: 30% --- */
+.blocks-area {
+    width: 30%;
+    background-color: #ffffff;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    border-left: 2px solid #e5e7eb;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.02);
+}
+
+.blocks-header {
+    margin-bottom: 2rem;
+    text-align: center;
+    color: #1f2937;
+}
+
+.options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* --- Bloques (Estilo de la imagen) --- */
+.block {
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    color: white;
+    cursor: grab;
+    text-align: center;
+    transition: transform 0.1s;
+    user-select: none;
+}
+
+.block:active {
+    cursor: grabbing;
+    transform: scale(0.98);
+}
+
+/* --- Botones y Modales --- */
+.btn-primary {
+    margin-top: 1.5rem;
+    padding: 12px 30px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 0 #2563eb;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-primary:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #2563eb;
+}
+
+#feedback-modal, #end-screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    text-align: center;
+    z-index: 100;
+    width: 80%;
+    max-width: 500px;
+}
+
+.correct-text { color: #10b981; }
+.error-text { color: #ef4444; }
