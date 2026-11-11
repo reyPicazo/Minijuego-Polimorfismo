@@ -96,7 +96,6 @@ const questions = [
         text: "Completa el código para usar Polimorfismo SIN herencia (Duck Typing).",
         // Aquí estructuramos el HTML interno para que se vea idéntico a la imagen
         htmlCode: `
-            <span class="cmt"># --- PARTE 1: Polimorfismo por Duck Typing ---</span><br><br>
             <span class="kw">class</span> Triangulo:<br>
             &nbsp;&nbsp;&nbsp;&nbsp;<div class="drop-zone" data-index="0">Soltar aquí</div><br>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print( <span class="str">"Tengo 3 lados"</span> )<br><br>
@@ -119,7 +118,6 @@ const questions = [
     {
         text: "Completa el código para usar Polimorfismo CON herencia (Sobrescritura).",
         htmlCode: `
-            <span class="cmt"># --- PARTE 2: Polimorfismo con Herencia ---</span><br><br>
             <span class="kw">class</span> Animal:<br>
             &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> hablar(self):<br>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">pass</span><br><br>
